@@ -20,12 +20,17 @@ public class DatabaseService
             return false;
         }
         
+        Console.WriteLine($"Original NextEpisodeAiringAt: {TimeZoneUtils.GetDateTimeInfo(animeInfo.NextEpisodeAiringAt)}");
+        
+        var utcNextEpisode = TimeZoneUtils.ToUtc(animeInfo.NextEpisodeAiringAt);
+        Console.WriteLine($"Converted NextEpisodeAiringAt: {TimeZoneUtils.GetDateTimeInfo(utcNextEpisode)}");
+        
         var userAnime = new UserAnime
         {
             UserId = userId,
             AnimeId = animeInfo.Id,
             Title = animeInfo.Title,
-            NextEpisodeAiringAt = animeInfo.NextEpisodeAiringAt,
+            NextEpisodeAiringAt = utcNextEpisode,
             Status = animeInfo.Status,
             Season = animeInfo.Season,
             SeasonYear = animeInfo.SeasonYear
@@ -44,7 +49,7 @@ public class DatabaseService
             {
                 Id = ua.AnimeId,
                 Title = ua.Title,
-                NextEpisodeAiringAt = ua.NextEpisodeAiringAt,
+                NextEpisodeAiringAt = TimeZoneUtils.ToPolandTime(ua.NextEpisodeAiringAt),
                 Status = ua.Status,
                 Season = ua.Season,
                 SeasonYear = ua.SeasonYear
@@ -55,7 +60,7 @@ public class DatabaseService
     public async Task RemoveFinishedAnimeAsync(ulong userId)
     {
         var finishedAnime = await _context.UserAnimes
-            .Where(ua => ua.UserId == userId && ua.NextEpisodeAiringAt == DateTime.MaxValue)
+            .Where(ua => ua.UserId == userId && ua.NextEpisodeAiringAt <= DateTime.UtcNow)
             .ToListAsync();
         
         _context.UserAnimes.RemoveRange(finishedAnime);
@@ -64,9 +69,7 @@ public class DatabaseService
 
     public async Task UpdateNextEpisodeAiringAtAsync(int animeId, DateTime nextAiringAt)
     {
-        var polandTimeZone = TimeZoneInfo.FindSystemTimeZoneById("Central European Standard Time");
-        var utcAiringAt = DateTime.SpecifyKind(nextAiringAt, DateTimeKind.Unspecified);
-        utcAiringAt = TimeZoneInfo.ConvertTime(utcAiringAt, polandTimeZone, TimeZoneInfo.Utc);
+        var utcAiringAt = TimeZoneUtils.ToUtc(nextAiringAt);
     
         var animes = await _context.UserAnimes
             .Where(ua => ua.AnimeId == animeId)
@@ -114,7 +117,8 @@ public class DatabaseService
     public async Task<DateTime> GetLastShutdownTimeAsync()
     {
         var config = await _context.Configurations.FirstOrDefaultAsync(c => c.Key == "LastShutdownTime");
-        return config == null ? DateTime.UtcNow.AddYears(-1) : // Jeśli nie ma zapisanego czasu, zwróć datę sprzed roku
-            DateTime.Parse(config.Value);
+        return config == null 
+            ? TimeZoneUtils.ToPolandTime(DateTime.UtcNow.AddYears(-1))
+            : TimeZoneUtils.ToPolandTime(DateTime.Parse(config.Value));
     }
 }

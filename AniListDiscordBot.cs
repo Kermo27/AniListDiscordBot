@@ -1,5 +1,4 @@
 ﻿using System.Text.Json;
-using System.Timers;
 using AniListDiscordBot.Commands;
 using AniListDiscordBot.Models;
 using AniListDiscordBot.Services;
@@ -7,7 +6,6 @@ using Discord;
 using Discord.Commands;
 using Discord.WebSocket;
 using Microsoft.Extensions.DependencyInjection;
-using Timer = System.Timers.Timer;
 
 namespace AniListDiscordBot;
 
@@ -16,17 +14,7 @@ public class AniListDiscordBot
     private DiscordSocketClient _client;
     private CommandService _commands;
     private IServiceProvider _services;
-    private Timer _activityTimer;
-
-    private readonly List<IActivity> _activities = new List<IActivity>
-    {
-        new Game("Shikanoko Nokonoko Koshitantan", ActivityType.Watching),
-        new Game("Tokidoki Bosotto Russiago de Dereru Tonari no Alya-san", ActivityType.Watching),
-        new Game("Sword Art Online", ActivityType.Watching),
-        new Game("Mid:Zero kara Hajimeru Isekai Seikatsu", ActivityType.Watching),
-        new StreamingGame("kermo____", "https://twitch.tv/kermo____"),
-    };
-    private int _currentActivityIndex = 0;
+    private ActivityManager _activityManager;
 
     public async Task RunAsync()
     {
@@ -45,13 +33,25 @@ public class AniListDiscordBot
             CaseSensitiveCommands = false
         });
 
+        var config = LoadConfig("config.json");
+        _activityManager = new ActivityManager(_client, new List<IActivity>
+        {
+            new Game("Shikanoko Nokonoko Koshitantan", ActivityType.Watching),
+            new Game("Tokidoki Bosotto Russiago de Dereru Tonari no Alya-san", ActivityType.Watching),
+            new Game("Sword Art Online", ActivityType.Watching),
+            new Game("Mid:Zero kara Hajimeru Isekai Seikatsu", ActivityType.Watching),
+            new StreamingGame("kermo____", "https://twitch.tv/kermo____"),
+        });
+        
         _services = ConfigureServices();
-
+        
         _client.Log += LogAsync;
         _commands.Log += LogAsync;
-        _client.Ready += ClientReadyASync;
-
-        var config = LoadConfig("config.json");
+        _client.Ready += async () =>
+        {
+            await _activityManager.StartActivityCycleAsync();
+            Console.WriteLine($"{_client.CurrentUser} is connected!");
+        };
         
         await _client.LoginAsync(TokenType.Bot, config.Token);
         await _client.StartAsync();
@@ -75,31 +75,6 @@ public class AniListDiscordBot
     {
         Console.WriteLine(log.ToString());
         return Task.CompletedTask;
-    }
-
-    private async Task ClientReadyASync()
-    {
-        Console.WriteLine($"{_client.CurrentUser} is connected!");
-
-        _activityTimer = new Timer(300000); // 5 minutes 
-        _activityTimer.Elapsed += ChangeActivity;
-        _activityTimer.Start();
-
-        await ChangeActivityAsync();
-    }
-
-    private async void ChangeActivity(object sender, ElapsedEventArgs e)
-    {
-        await ChangeActivityAsync();
-    }
-
-    private async Task ChangeActivityAsync()
-    {
-        var activity = _activities[_currentActivityIndex];
-
-        await _client.SetActivityAsync(activity);
-
-        _currentActivityIndex = (_currentActivityIndex + 1) % _activities.Count;
     }
 
     private static BotConfig LoadConfig(string path)

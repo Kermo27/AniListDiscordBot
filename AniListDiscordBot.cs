@@ -11,7 +11,7 @@ using Timer = System.Timers.Timer;
 
 namespace AniListDiscordBot;
 
-public class AnimeBot
+public class AniListDiscordBot
 {
     private DiscordSocketClient _client;
     private CommandService _commands;

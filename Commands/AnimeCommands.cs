@@ -26,26 +26,62 @@ public class AnimeCommands : ModuleBase<SocketCommandContext>
             switch (animeInfo.Status)
             {
                 case "FINISHED":
-                    await ReplyAsync($"Anime '{animeInfo.Title}' jest już zakończone i nie może być dodane do listy obserwowanych.");
+                    var finishedEmbed = new EmbedBuilder()
+                        .WithTitle("Nie można dodać anime")
+                        .WithDescription($"Anime '{animeInfo.Title}' jest już zakończone i nie może być dodane do listy obserwowanych.")
+                        .WithColor(Color.Red)
+                        .WithImageUrl(animeInfo.PosterUrl)
+                        .Build();
+                
+                    await ReplyAsync(embed: finishedEmbed);
                     return;
                 case "NOT_YET_RELEASED":
-                    await ReplyAsync($"Anime '{animeInfo.Title}' nie jest rozpoczęte i nie może być dodane do listy obserwowanych.");
+                    var notYetReleasedEmbed = new EmbedBuilder()
+                        .WithTitle("Nie można dodać anime")
+                        .WithDescription($"Anime '{animeInfo.Title}' nie jest rozpoczęte i nie może być dodane do listy obserwowanych.")
+                        .WithColor(Color.Red)
+                        .WithImageUrl(animeInfo.PosterUrl)
+                        .Build();
+                
+                    await ReplyAsync(embed: notYetReleasedEmbed);
                     return;
             }
 
             var added = await _databaseService.AddAnimeToWatchlistAsync(Context.User.Id, animeInfo);
             if (added)
             {
-                await ReplyAsync($"Dodano anime '{animeInfo.Title}' do twojej listy obserwowanych.");
+                var addedEmbed = new EmbedBuilder()
+                    .WithTitle("Anime dodane do listy")
+                    .WithDescription($"Dodano anime '{animeInfo.Title}' do twojej listy obserwowanych.")
+                    .WithColor(Color.Green)
+                    .WithImageUrl(animeInfo.PosterUrl)
+                    .AddField("Sezon", animeInfo.Season ?? "N/A")
+                    .AddField("Rok Sezonu", animeInfo.SeasonYear.ToString() ?? "N/A")
+                    .Build();
+            
+                await ReplyAsync(embed: addedEmbed);
             }
             else
             {
-                await ReplyAsync($"Nie można dodać anime '{animeInfo.Title}' do listy obserwowanych.");
+                var errorEmbed = new EmbedBuilder()
+                    .WithTitle("Błąd")
+                    .WithDescription($"Nie można dodać anime '{animeInfo.Title}' do listy obserwowanych.")
+                    .WithColor(Color.Red)
+                    .WithImageUrl(animeInfo.PosterUrl)
+                    .Build();
+            
+                await ReplyAsync(embed: errorEmbed);
             }
         }
         catch (Exception ex)
         {
-            await ReplyAsync($"Wystąpił błąd podczas dodawania anime {ex.Message}");
+            var exceptionEmbed = new EmbedBuilder()
+                .WithTitle("Błąd")
+                .WithDescription($"Wystąpił błąd podczas dodawania anime: {ex.Message}")
+                .WithColor(Color.Red)
+                .Build();
+        
+            await ReplyAsync(embed: exceptionEmbed);
         }
     }
 

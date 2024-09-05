@@ -28,6 +28,7 @@ public class AniListService
                         status
                         nextAiringEpisode {
                             airingAt
+                            episode
                         }
                         coverImage {
                             large
@@ -53,7 +54,8 @@ public class AniListService
         DateTime nextEpisodeAiringAt;
         if (media.NextAiringEpisode?.AiringAt.HasValue == true)
         {
-            nextEpisodeAiringAt = DateTimeOffset.FromUnixTimeSeconds(media.NextAiringEpisode.AiringAt.Value).UtcDateTime;
+            nextEpisodeAiringAt =
+                DateTimeOffset.FromUnixTimeSeconds(media.NextAiringEpisode.AiringAt.Value).UtcDateTime;
             nextEpisodeAiringAt = DateTime.SpecifyKind(nextEpisodeAiringAt, DateTimeKind.Utc);
             nextEpisodeAiringAt = TimeZoneInfo.ConvertTime(nextEpisodeAiringAt, polandTimeZone);
         }
@@ -68,6 +70,7 @@ public class AniListService
             Title = media.Title.Romaji,
             Status = media.Status,
             NextEpisodeAiringAt = nextEpisodeAiringAt,
+            Episode = media.NextAiringEpisode.Episode,
             PosterUrl = media.CoverImage.Large,
             Season = media.Season,
             SeasonYear = media.SeasonYear

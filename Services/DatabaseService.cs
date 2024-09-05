@@ -20,10 +20,7 @@ public class DatabaseService
             return false;
         }
         
-        Console.WriteLine($"Original NextEpisodeAiringAt: {TimeZoneUtils.GetDateTimeInfo(animeInfo.NextEpisodeAiringAt)}");
-        
         var utcNextEpisode = TimeZoneUtils.ToUtc(animeInfo.NextEpisodeAiringAt);
-        Console.WriteLine($"Converted NextEpisodeAiringAt: {TimeZoneUtils.GetDateTimeInfo(utcNextEpisode)}");
         
         var userAnime = new UserAnime
         {
@@ -31,6 +28,8 @@ public class DatabaseService
             AnimeId = animeInfo.Id,
             Title = animeInfo.Title,
             NextEpisodeAiringAt = utcNextEpisode,
+            Episode = animeInfo.Episode,
+            PosterUrl = animeInfo.PosterUrl,
             Status = animeInfo.Status,
             Season = animeInfo.Season,
             SeasonYear = animeInfo.SeasonYear

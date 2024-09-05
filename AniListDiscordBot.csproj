@@ -19,6 +19,7 @@
       <None Update="config.json">
               <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       </None>
+      <PackageReference Include="Victoria" Version="7.0.5" />
     </ItemGroup>
 
 </Project>
